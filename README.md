@@ -1,73 +1,116 @@
-# Welcome to your Lovable project
+🚀 Frontend Project
+📘 Project Overview
 
-## Project info
+This is a modern frontend web application built with React, TypeScript, Vite, Tailwind CSS, and shadcn/ui.
+It’s designed for speed, scalability, and clean UI development practices.
 
-**URL**: https://lovable.dev/projects/234de33a-58ab-4b14-bba1-33836323ce39
+🛠️ Tech Stack
 
-## How can I edit this code?
+⚛️ React — UI library
 
-There are several ways of editing your application.
+⚡ Vite — Fast development and build tool
 
-**Use Lovable**
+🧩 TypeScript — Type-safe JavaScript
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/234de33a-58ab-4b14-bba1-33836323ce39) and start prompting.
+🎨 Tailwind CSS — Utility-first styling
 
-Changes made via Lovable will be committed automatically to this repo.
+🧱 shadcn/ui — Prebuilt, accessible UI components
 
-**Use your preferred IDE**
+🧑‍💻 How to Run Locally
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Follow these steps to set up and run the project locally.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Prerequisites
 
-Follow these steps:
+Make sure you have Node.js and npm (or yarn/pnpm) installed.
+You can install Node.js using nvm
+.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+Steps
+# 1. Clone this repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# 2. Move into the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Start the development server
 npm run dev
-```
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Once started, open your browser and go to:
 
-**Use GitHub Codespaces**
+http://localhost:5173
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+(The port may differ based on your Vite config.)
 
-This project is built with:
+🧱 Project Structure
+.
+├── src/
+│   ├── components/     # Reusable UI components
+│   ├── pages/          # Page-level components
+│   ├── lib/            # Utility functions & configs
+│   ├── hooks/          # Custom React hooks
+│   ├── styles/         # Global and Tailwind styles
+│   └── main.tsx        # App entry point
+├── public/             # Static assets
+├── index.html          # Base HTML template
+├── package.json        # Dependencies and scripts
+└── vite.config.ts      # Vite configuration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+🧩 Common Commands
+Command	Description
+npm run dev	Start development server
+npm run build	Build the app for production
+npm run preview	Preview the production build locally
+npm run lint	Run code linting
+🌐 Deployment
 
-## How can I deploy this project?
+You can deploy the production build to any hosting provider such as:
 
-Simply open [Lovable](https://lovable.dev/projects/234de33a-58ab-4b14-bba1-33836323ce39) and click on Share -> Publish.
+Vercel
 
-## Can I connect a custom domain to my Lovable project?
+Netlify
 
-Yes, you can!
+GitHub Pages
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Render
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+AWS Amplify
+
+To build and deploy:
+npm run build
+
+
+This will generate an optimized dist/ folder that you can deploy.
+
+🛡️ Environment Variables
+
+If your project uses environment variables, create a .env file in the root directory.
+
+Example:
+
+VITE_API_BASE_URL=https://api.example.com
+
+
+Then access it in your code using:
+
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+🤝 Contributing
+
+Pull requests and contributions are welcome.
+Before submitting, please:
+
+Follow consistent code style (TypeScript + ESLint)
+
+Write meaningful commit messages
+
+Test your changes locally
+
+📄 License
+
+This project is licensed under the MIT License — free to use and modify.
