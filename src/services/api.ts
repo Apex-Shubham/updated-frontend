@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { Market, Selection, ThreadConfig, Option, SearchResponse, MarketIdeasResponse } from '@/types';
+import { Market, Selection, ThreadConfig, Option, SearchResponse, MarketIdeasResponse, RedditScrapeResponse, PainPointsAnalysisResponse } from '@/types';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -13,7 +13,7 @@ const api = axios.create({
 // Create separate axios instance for backend search API
 const searchApi = axios.create({
   baseURL: import.meta.env.VITE_SEARCH_API_URL || 'https://dbaas-api.apexneural.cloud/dbas/api',
-  timeout: 30000, // Longer timeout for AI generation
+  timeout: 180000, // 180 seconds (3 minutes) for AI generation, scraping, and analysis
   headers: {
     'Content-Type': 'application/json',
   },
@@ -223,16 +223,11 @@ export const apiService = {
         console.log('🔍 Searching for market ideas:', sanitizedTopic);
       }
 
-      // Call the backend pain points analysis endpoint
+      // Call the backend market ideas generation endpoint
       const { data } = await searchApi.post<SearchResponse>('/market-ideas/generate/', {
-        post: {
-          title: sanitizedTopic,
-          selftext: sanitizedTopic,
-          author: "user",
-          score: 0
-        },
-        comments: [],
-        total_comments: 0
+        topic: sanitizedTopic,
+        model: "anthropic/claude-3.5-sonnet",
+        temperature: 0.7
       });
 
       // Check response status
@@ -271,6 +266,95 @@ export const apiService = {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
         console.error('Search API error:', message);
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  // Reddit scraping endpoint
+  scrapeRedditThreads: async (urls: string[]): Promise<any> => {
+    try {
+      // Validate input
+      if (!urls || !Array.isArray(urls) || urls.length === 0) {
+        throw new Error('No URLs provided for scraping');
+      }
+
+      // Log the request in development
+      if (import.meta.env.DEV) {
+        console.log('🕷️ Scraping Reddit threads:', urls);
+      }
+
+      // Call the backend scrape endpoint
+      const { data } = await searchApi.post<RedditScrapeResponse>('/reddit/scrape/', {
+        urls: urls
+      });
+
+      // Check response status
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to scrape Reddit threads');
+      }
+
+      // Log success in development
+      if (import.meta.env.DEV) {
+        console.log('✅ Reddit scrape completed:', data);
+      }
+
+      return data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        console.error('Reddit scrape error:', message);
+        throw new Error(message);
+      }
+      throw error;
+    }
+  },
+
+  // Pain points analysis endpoint
+  analyzePainPoints: async (scrapedData: any): Promise<any> => {
+    try {
+      // Validate input
+      if (!scrapedData) {
+        throw new Error('No data provided for analysis');
+      }
+
+      // Log the request in development
+      if (import.meta.env.DEV) {
+        console.log('🔬 Analyzing pain points from scraped data');
+      }
+
+      // Create FormData and convert scraped data to JSON file
+      const formData = new FormData();
+      const jsonBlob = new Blob([JSON.stringify(scrapedData)], { type: 'application/json' });
+      formData.append('files', jsonBlob, 'scraped_data.json');
+
+      // Call the backend analysis endpoint with multipart/form-data
+      const { data } = await searchApi.post<PainPointsAnalysisResponse>(
+        '/pain-points/complete-analysis-file/', 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      // Check response status
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to analyze pain points');
+      }
+
+      // Log success in development
+      if (import.meta.env.DEV) {
+        console.log('✅ Pain points analysis completed:', data);
+      }
+
+      return data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        console.error('Pain points analysis error:', message);
         throw new Error(message);
       }
       throw error;

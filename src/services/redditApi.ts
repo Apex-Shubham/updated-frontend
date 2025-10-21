@@ -3,7 +3,7 @@ import { RedditSearchResponse, RedditPost } from '@/types';
 
 // Create axios instance for Reddit API
 const redditApi = axios.create({
-  baseURL: import.meta.env.VITE_REDDIT_API_URL || 'http://localhost:8001',
+  baseURL: import.meta.env.VITE_REDDIT_API_URL || 'https://dbaas-api.apexneural.cloud/dbas/api',
   timeout: 180000, // 180 seconds for Reddit scraping
   headers: {
     'Content-Type': 'application/json',

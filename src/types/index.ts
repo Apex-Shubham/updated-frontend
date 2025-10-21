@@ -79,3 +79,25 @@ export interface RedditSearchResponse {
     top_posts: RedditPost[];
   };
 }
+
+// Reddit scrape request/response types
+export interface RedditScrapeRequest {
+  urls: string[];
+}
+
+export interface RedditScrapeResponse {
+  success: boolean;
+  message: string;
+  data: any; // Backend will return scraped data structure
+}
+
+// Pain points analysis types
+export interface PainPointsAnalysisRequest {
+  data: any; // Scraped data from reddit/scrape
+}
+
+export interface PainPointsAnalysisResponse {
+  success: boolean;
+  message: string;
+  data: any; // Analysis results
+}

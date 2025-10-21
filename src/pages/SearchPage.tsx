@@ -20,7 +20,7 @@ interface TrendingTopic {
 
 const SearchPage = () => {
   const navigate = useNavigate();
-  const { setMarket } = useFlowStore();
+  const { setMarket, setSearchQuery: setStoredQuery } = useFlowStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +113,7 @@ const SearchPage = () => {
       // Store the results in sessionStorage to pass to CategoriesPage
       sessionStorage.setItem('searchResults', JSON.stringify(marketIdeas));
       sessionStorage.setItem('searchQuery', searchQuery);
+      setStoredQuery(searchQuery);
 
       // Navigate to results page with the search query
       setTimeout(() => {

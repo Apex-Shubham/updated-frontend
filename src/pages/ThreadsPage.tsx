@@ -22,34 +22,26 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { redditApiService } from '@/services/redditApi';
+import { apiService } from '@/services/api';
 import { RedditPost } from '@/types';
 
-interface RedditThread {
-  id: string;
-  title: string;
-  subreddit: string;
-  upvotes: number;
-  comments: number;
-  timeAgo: string;
-  preview: string;
-  url: string;
-  recommended?: boolean;
-  category: 'trending' | 'hot' | 'rising';
-}
 
 const ThreadsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setThreadConfig } = useFlowStore();
+  const { setThreadConfig, setSelectedThreads: setStoreThreads, setAnalysisResults, searchQuery: storedQuery, setSearchQuery: setStoredQuery, redditPosts: storedRedditPosts, setRedditPosts: setStoredRedditPosts } = useFlowStore();
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(new Set());
-  const [redditPosts, setRedditPosts] = useState<RedditPost[]>([]);
+  const [redditPosts, setRedditPosts] = useState<RedditPost[]>(storedRedditPosts);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch Reddit posts on component mount
   useEffect(() => {
-    const query = searchParams.get('query');
+    let isMounted = true;
+    
+    const query = searchParams.get('query') || storedQuery;
     if (!query) {
       setHasError(true);
       toast.error('No search query provided', {
@@ -59,8 +51,25 @@ const ThreadsPage = () => {
     }
 
     setSearchQuery(query);
-    fetchRedditPosts(query);
-  }, [searchParams]);
+    setStoredQuery(query); // Store query for back navigation
+    
+    // Only fetch if we don't have stored posts or if it's a new query
+    if (isMounted) {
+      if (storedRedditPosts.length === 0 || storedQuery !== query) {
+        fetchRedditPosts(query);
+      } else {
+        // Use stored posts, no API call needed
+        setRedditPosts(storedRedditPosts);
+        toast.success(`Loaded ${storedRedditPosts.length} Reddit posts from cache!`, {
+          icon: '⚡',
+        });
+      }
+    }
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams, storedQuery, setStoredQuery, storedRedditPosts]);
 
   const fetchRedditPosts = async (query: string) => {
     setIsLoading(true);
@@ -69,7 +78,7 @@ const ThreadsPage = () => {
     const loadingToast = toast.loading('Searching Reddit...');
 
     try {
-      const posts = await redditApiService.searchReddit(query, 100);
+      const posts = await redditApiService.searchReddit(query, 5);
       
       toast.dismiss(loadingToast);
       
@@ -84,6 +93,7 @@ const ThreadsPage = () => {
       }
 
       setRedditPosts(posts);
+      setStoredRedditPosts(posts); // Store posts for back navigation
     } catch (error) {
       toast.dismiss(loadingToast);
       setHasError(true);
@@ -103,78 +113,6 @@ const ThreadsPage = () => {
     }
   };
 
-  // Mock data as fallback (you can remove this later)
-  const redditThreads: RedditThread[] = [
-    {
-      id: 'thread-1',
-      title: 'AI breakthrough in healthcare: New algorithm can detect cancer 99.7% accurately',
-      subreddit: 'technology',
-      upvotes: 15420,
-      comments: 892,
-      timeAgo: '2 hours ago',
-      preview: 'Researchers at Stanford have developed a new AI model that can detect various types of cancer with unprecedented accuracy. The model was trained on over 2 million medical images and shows promising results...',
-      url: 'https://reddit.com/r/technology/comments/abc123',
-      recommended: true,
-      category: 'trending',
-    },
-    {
-      id: 'thread-2',
-      title: 'What\'s the most underrated skill that changed your life?',
-      subreddit: 'AskReddit',
-      upvotes: 8932,
-      comments: 2156,
-      timeAgo: '4 hours ago',
-      preview: 'I learned to cook during the pandemic and it completely changed how I approach food, health, and even social situations. What skill had a similar impact on your life?',
-      url: 'https://reddit.com/r/AskReddit/comments/def456',
-      recommended: true,
-      category: 'hot',
-    },
-    {
-      id: 'thread-3',
-      title: 'TIL that honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3000 years old and still perfectly edible.',
-      subreddit: 'todayilearned',
-      upvotes: 12450,
-      comments: 456,
-      timeAgo: '6 hours ago',
-      preview: 'Honey\'s low moisture content and acidic pH make it inhospitable to bacteria and microorganisms. The ancient Egyptians used honey for both food and medicinal purposes...',
-      url: 'https://reddit.com/r/todayilearned/comments/ghi789',
-      category: 'trending',
-    },
-    {
-      id: 'thread-4',
-      title: 'My 5-year-old just explained quantum computing to me using LEGO blocks',
-      subreddit: 'wholesome',
-      upvotes: 6789,
-      comments: 234,
-      timeAgo: '8 hours ago',
-      preview: 'She built a "quantum computer" with different colored blocks representing 0s and 1s, and explained how they can be both at the same time. Kids are amazing...',
-      url: 'https://reddit.com/r/wholesome/comments/jkl012',
-      category: 'rising',
-    },
-    {
-      id: 'thread-5',
-      title: 'The complete guide to building your first PC in 2024',
-      subreddit: 'buildapc',
-      upvotes: 3456,
-      comments: 189,
-      timeAgo: '12 hours ago',
-      preview: 'After helping 100+ people build their first PCs, I\'ve compiled everything you need to know. From choosing components to cable management, this guide covers it all...',
-      url: 'https://reddit.com/r/buildapc/comments/mno345',
-      category: 'hot',
-    },
-    {
-      id: 'thread-6',
-      title: 'Scientists discover new species of deep-sea creature that glows in the dark',
-      subreddit: 'science',
-      upvotes: 9876,
-      comments: 567,
-      timeAgo: '1 day ago',
-      preview: 'The newly discovered bioluminescent fish was found at a depth of 3,000 meters in the Mariana Trench. It uses its glow to communicate and hunt in the pitch-black depths...',
-      url: 'https://reddit.com/r/science/comments/pqr678',
-      category: 'trending',
-    },
-  ];
-
   const toggleThreadSelection = (threadId: string) => {
     setSelectedThreads((prev) => {
       const next = new Set(prev);
@@ -191,7 +129,7 @@ const ThreadsPage = () => {
     navigate(-1); // Go back to previous page
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (selectedThreads.size === 0) {
       toast.error('Please select at least one thread', {
         icon: '⚠️',
@@ -199,24 +137,68 @@ const ThreadsPage = () => {
       return;
     }
 
-    const config = Array.from(selectedThreads).map(threadId => ({
-      threadId,
-      selectedOptions: [threadId], // Simplified for now
-    }));
-    
-    setThreadConfig(config);
+    setIsProcessing(true);
 
-    toast.success(`${selectedThreads.size} thread${selectedThreads.size > 1 ? 's' : ''} configured!`, {
-      icon: '✅',
-      style: {
-        background: '#10b981',
-        color: '#fff',
-      },
-    });
-    
-    setTimeout(() => {
-      navigate('/options');
-    }, 300);
+    const loadingToast = toast.loading('Processing selected threads...');
+
+    try {
+      // Get the full thread data for selected threads
+      const selectedThreadData = redditPosts.filter(post => 
+        selectedThreads.has(post.id)
+      );
+
+      // Extract URLs from selected threads
+      const urls = selectedThreadData.map(post => post.url);
+
+      // Store selected threads in flow store
+      setStoreThreads(selectedThreadData);
+
+      // Step 1: Scrape the Reddit threads
+      toast.loading('Scraping Reddit threads...', { id: loadingToast });
+      const scrapedData = await apiService.scrapeRedditThreads(urls);
+
+      // Step 2: Analyze the scraped data
+      toast.loading('Analyzing pain points...', { id: loadingToast });
+      const analysisResults = await apiService.analyzePainPoints(scrapedData);
+
+      // Store analysis results in flow store
+      setAnalysisResults(analysisResults);
+
+      // Store thread config
+      const config = Array.from(selectedThreads).map(threadId => ({
+        threadId,
+        selectedOptions: [threadId],
+      }));
+      setThreadConfig(config);
+
+      toast.dismiss(loadingToast);
+      toast.success(`${selectedThreads.size} thread${selectedThreads.size > 1 ? 's' : ''} analyzed successfully!`, {
+        icon: '✅',
+        style: {
+          background: '#10b981',
+          color: '#fff',
+        },
+      });
+      
+      setTimeout(() => {
+        navigate('/options');
+      }, 300);
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to process threads';
+      
+      toast.error(errorMessage, {
+        icon: '❌',
+        duration: 5000,
+      });
+
+      console.error('Thread processing error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Helper function to format time ago
@@ -250,7 +232,7 @@ const ThreadsPage = () => {
   const risingThreads = redditPosts.filter((_, idx) => categorizePost(_, idx) === 'rising');
 
   // Render card for real Reddit post
-  const renderRedditPostCard = (post: RedditPost, isSelected: boolean, category: 'trending' | 'hot' | 'rising') => (
+  const renderRedditPostCard = (post: RedditPost, isSelected: boolean) => (
     <motion.div
       key={post.id}
       initial={{ opacity: 0, y: 20 }}
@@ -332,101 +314,6 @@ const ThreadsPage = () => {
         <div className="pt-2 border-t border-slate-700">
           <a
             href={post.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors text-sm"
-          >
-            <ExternalLink className="h-4 w-4" />
-            View on Reddit
-          </a>
-        </div>
-      </div>
-    </motion.div>
-  );
-
-  // Old mock data card renderer
-  const renderThreadCard = (thread: RedditThread, isSelected: boolean) => (
-    <motion.div
-      key={thread.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className={cn(
-        'bg-slate-800/50 backdrop-blur-sm border rounded-2xl p-6 transition-all',
-        isSelected ? 'border-orange-500 bg-orange-500/10' : 'border-slate-700 hover:border-slate-600'
-      )}
-    >
-      {/* Thread Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-bold text-white line-clamp-2">{thread.title}</h3>
-            {thread.recommended && (
-              <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
-                <Zap className="h-3 w-3 mr-1" />
-                Recommended
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mb-3">
-            <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">
-              r/{thread.subreddit}
-            </Badge>
-          </div>
-        </div>
-        
-        {/* Selection Toggle */}
-        <motion.button
-          onClick={() => toggleThreadSelection(thread.id)}
-          className={cn(
-            'w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all',
-            isSelected
-              ? 'bg-orange-500 border-orange-500 text-white'
-              : 'border-slate-400 hover:border-orange-400'
-          )}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          {isSelected && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Check className="h-4 w-4" />
-            </motion.div>
-          )}
-        </motion.button>
-      </div>
-
-      {/* Reddit Metrics */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <ArrowUp className="h-4 w-4 text-orange-400" />
-              <span className="text-white font-medium">{thread.upvotes.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-4 w-4 text-blue-400" />
-              <span className="text-white font-medium">{thread.comments.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-400">{thread.timeAgo}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Thread Preview */}
-        <div className="text-slate-300 text-sm leading-relaxed">
-          {thread.preview}
-        </div>
-
-        {/* View on Reddit Link */}
-        <div className="pt-2 border-t border-slate-700">
-          <a
-            href={thread.url}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors text-sm"
@@ -548,7 +435,7 @@ const ThreadsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trendingThreads.map((post) => {
                 const isSelected = selectedThreads.has(post.id);
-                return renderRedditPostCard(post, isSelected, 'trending');
+                return renderRedditPostCard(post, isSelected);
               })}
             </div>
           </motion.div>
@@ -573,7 +460,7 @@ const ThreadsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {hotThreads.map((post) => {
                 const isSelected = selectedThreads.has(post.id);
-                return renderRedditPostCard(post, isSelected, 'hot');
+                return renderRedditPostCard(post, isSelected);
               })}
             </div>
           </motion.div>
@@ -598,7 +485,7 @@ const ThreadsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {risingThreads.map((post) => {
                 const isSelected = selectedThreads.has(post.id);
-                return renderRedditPostCard(post, isSelected, 'rising');
+                return renderRedditPostCard(post, isSelected);
               })}
             </div>
           </motion.div>
@@ -644,14 +531,21 @@ const ThreadsPage = () => {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               onClick={handleProceed}
-              disabled={selectedThreads.size === 0}
+              disabled={selectedThreads.size === 0 || isProcessing}
               className={cn(
                 'rounded-2xl px-8 py-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600',
                 'text-white shadow-xl hover:shadow-2xl hover:shadow-orange-500/50',
                 'disabled:opacity-50 disabled:cursor-not-allowed transition-all'
               )}
             >
-              Select Threads →
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Select Threads →'
+              )}
             </Button>
           </motion.div>
           </motion.div>
