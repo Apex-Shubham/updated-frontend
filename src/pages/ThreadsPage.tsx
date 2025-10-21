@@ -310,11 +310,11 @@ const ThreadsPage = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <ArrowUp className="h-4 w-4 text-orange-400" />
-              <span className="text-white font-medium">{post.upvotes.toLocaleString()}</span>
+              <span className="text-white font-medium">{(post.upvotes || 0).toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-1">
               <MessageCircle className="h-4 w-4 text-blue-400" />
-              <span className="text-white font-medium">{post.comments.toLocaleString()}</span>
+              <span className="text-white font-medium">{(post.comments || 0).toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4 text-slate-400" />

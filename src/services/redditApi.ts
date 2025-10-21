@@ -59,17 +59,38 @@ export const redditApiService = {
       }
 
       // Call the Reddit API
-      const { data } = await redditApi.post<RedditSearchResponse>('/api/search', {
-        query: sanitizedQuery,
-        max_results: Math.min(maxResults, 100), // Cap at 100
+      const { data } = await redditApi.post<RedditSearchResponse>('/reddit/complete-research', {
+        market: sanitizedQuery,
+        num_results: Math.min(maxResults, 100), // Cap at 100
+        top_n: 10
       });
 
       // Check response status
-      if (data.status === 'error') {
+      if (!data.success) {
         throw new Error(data.message || 'Failed to search Reddit');
       }
 
-      return data.data.posts || [];
+      // Debug: Log the actual Reddit API response structure
+      console.log('🔍 Reddit API response data:', JSON.stringify(data.data, null, 2));
+      
+      // Return the top_posts from the complete research response
+      const posts = data.data.top_posts || [];
+      
+      // Transform the posts to match the expected frontend format
+      const transformedPosts = posts.map((post, index) => ({
+        id: post.id || `post_${index}`,
+        rank: post.rank || index + 1,
+        title: post.title || 'No title',
+        url: post.url || '#',
+        subreddit: post.subreddit || 'unknown',
+        upvotes: post.upvotes || post.score || 0,
+        comments: post.comments || post.num_comments || 0,
+        preview: post.preview || post.selftext || 'No preview available',
+        score: post.score || post.upvotes || 0,
+        created_utc: post.created_utc || Date.now() / 1000
+      }));
+      
+      return transformedPosts;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;

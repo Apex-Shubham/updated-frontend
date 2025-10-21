@@ -3,7 +3,7 @@ import { Market, Selection, ThreadConfig, Option, SearchResponse, MarketIdeasRes
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://dbaas-api.apexneural.cloud/dbas/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Create separate axios instance for backend search API
 const searchApi = axios.create({
-  baseURL: import.meta.env.VITE_SEARCH_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_SEARCH_API_URL || 'https://dbaas-api.apexneural.cloud/dbas/api',
   timeout: 30000, // Longer timeout for AI generation
   headers: {
     'Content-Type': 'application/json',
@@ -223,38 +223,50 @@ export const apiService = {
         console.log('🔍 Searching for market ideas:', sanitizedTopic);
       }
 
-      // Call the backend /generate endpoint
-      const { data } = await searchApi.post<SearchResponse>('/generate', {
-        topic: sanitizedTopic,
+      // Call the backend pain points analysis endpoint
+      const { data } = await searchApi.post<SearchResponse>('/market-ideas/generate/', {
+        post: {
+          title: sanitizedTopic,
+          selftext: sanitizedTopic,
+          author: "user",
+          score: 0
+        },
+        comments: [],
+        total_comments: 0
       });
 
       // Check response status
-      if (data.status === 'error') {
+      if (!data.success) {
         throw new Error(data.message || 'Failed to generate market ideas');
       }
 
-      // Parse the JSON response from the AI
-      const responseText = data.data.text;
+      // Extract the text data from the response
+      const textData = data.data?.data?.text;
       
-      // Remove markdown code blocks if present
-      const cleanedText = responseText
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-
-      try {
-        const parsedData = JSON.parse(cleanedText) as MarketIdeasResponse;
-        
-        // Log success in development
-        if (import.meta.env.DEV) {
-          console.log('✅ Market ideas received:', parsedData);
-        }
-
-        return parsedData;
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', cleanedText);
-        throw new Error('Invalid response format from AI');
+      if (!textData) {
+        throw new Error('No market ideas data received from backend');
       }
+
+      // Debug: Log the actual backend response structure
+      if (import.meta.env.DEV) {
+        console.log('🔍 Backend response:', data);
+      }
+
+      // Parse the JSON string from the text field
+      let parsedData: MarketIdeasResponse;
+      try {
+        parsedData = JSON.parse(textData);
+      } catch (parseError) {
+        console.error('Failed to parse market ideas JSON:', parseError);
+        throw new Error('Invalid market ideas format received from backend');
+      }
+      
+      // Log success in development
+      if (import.meta.env.DEV) {
+        console.log('✅ Market ideas received:', parsedData);
+      }
+
+      return parsedData;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;

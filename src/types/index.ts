@@ -30,11 +30,15 @@ export interface FlowState {
 
 // Search API types
 export interface SearchResponse {
+  success: boolean;
   message: string;
   data: {
-    text: string;
+    data: {
+      text: string;
+    };
+    status: string;
+    streaming: boolean;
   };
-  status: 'success' | 'error';
 }
 
 export interface MarketIdeasResponse {
@@ -64,11 +68,14 @@ export interface RedditPost {
 }
 
 export interface RedditSearchResponse {
+  success: boolean;
   message: string;
   data: {
-    posts: RedditPost[];
-    total: number;
-    query: string;
+    market: string;
+    total_urls_found: number;
+    posts_scraped: number;
+    posts_ranked: number;
+    ranked_urls: string[];
+    top_posts: RedditPost[];
   };
-  status: 'success' | 'error';
 }
