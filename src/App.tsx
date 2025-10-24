@@ -14,6 +14,8 @@ const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const ResultsPage = lazy(() => import("./pages/ResultsPage"));
 const ThreadsPage = lazy(() => import("./pages/ThreadsPage"));
 const OptionsPage = lazy(() => import("./pages/OptionsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const LandingPageCreationPage = lazy(() => import("./pages/LandingPageCreationPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading component
@@ -50,6 +52,8 @@ const AnimatedRoutes = () => {
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/threads" element={<ThreadsPage />} />
           <Route path="/options" element={<OptionsPage />} />
+          <Route path="/landing-creation" element={<LandingPageCreationPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

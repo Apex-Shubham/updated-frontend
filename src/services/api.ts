@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { Market, Selection, ThreadConfig, Option, SearchResponse, MarketIdeasResponse, RedditScrapeResponse, PainPointsAnalysisResponse } from '@/types';
+import { Market, Selection, ThreadConfig, Option, SearchResponse, MarketIdeasResponse, RedditScrapeResponse, PainPointsAnalysisResponse, TrendingTopicsResponse, TrendingTopic } from '@/types';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -358,6 +358,73 @@ export const apiService = {
         throw new Error(message);
       }
       throw error;
+    }
+  },
+
+  // Get trending topics
+  getTrendingTopics: async (): Promise<TrendingTopic[]> => {
+    try {
+      console.log('🔍 Fetching trending topics...');
+      const { data } = await searchApi.get<TrendingTopicsResponse>('/trending/top-trending');
+      
+      // Debug: Log the full response to understand the structure
+      console.log('🔍 Full API response:', JSON.stringify(data, null, 2));
+      
+      // Check if response exists
+      if (!data) {
+        throw new Error('No response received from trending topics API');
+      }
+      
+      // Check if the API call was successful
+      if (data.status !== 'success' || !data.data || !Array.isArray(data.data)) {
+        throw new Error('Invalid response structure from trending topics API');
+      }
+      
+      // Transform backend data to frontend format
+      const transformedTopics: TrendingTopic[] = data.data.map((backendTopic) => {
+        // Determine category based on topic content (simple keyword matching)
+        let category: 'Health' | 'Wealth' | 'Relationships' = 'Health'; // default
+        
+        const topicLower = backendTopic.topic.toLowerCase();
+        const descriptionLower = backendTopic.description.toLowerCase();
+        
+        if (topicLower.includes('health') || topicLower.includes('medical') || 
+            topicLower.includes('fitness') || topicLower.includes('wellness') ||
+            descriptionLower.includes('health') || descriptionLower.includes('medical')) {
+          category = 'Health';
+        } else if (topicLower.includes('money') || topicLower.includes('finance') || 
+                   topicLower.includes('investment') || topicLower.includes('business') ||
+                   descriptionLower.includes('finance') || descriptionLower.includes('business')) {
+          category = 'Wealth';
+        } else if (topicLower.includes('relationship') || topicLower.includes('dating') || 
+                   topicLower.includes('social') || topicLower.includes('communication') ||
+                   descriptionLower.includes('relationship') || descriptionLower.includes('social')) {
+          category = 'Relationships';
+        }
+        
+        return {
+          id: backendTopic.id.toString(),
+          category: category,
+          trend: backendTopic.growth,
+          volume: backendTopic.volume,
+          title: backendTopic.topic
+        };
+      });
+      
+      console.log('✅ Trending topics transformed:', transformedTopics);
+      return transformedTopics;
+    } catch (error) {
+      console.error('❌ Trending topics error:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        console.error('API Error Details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+        throw new Error(`Failed to fetch trending topics: ${errorMessage}`);
+      }
+      throw new Error('Failed to fetch trending topics');
     }
   },
 };
